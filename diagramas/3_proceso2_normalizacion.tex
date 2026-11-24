@@ -1,0 +1,117 @@
+% Diagrama 3: proceso 2 (proceso2mosaico.ipynb)
+% Normalización radiométrica adaptada del método RPRN (Liu et al., 2022).
+% Compila en Overleaf con pdfLaTeX o XeLaTeX.
+\documentclass[border=12pt]{standalone}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage[scaled]{helvet}
+\else
+  \usepackage{fontspec}
+  \setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular,
+    BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic, Scale=0.95]
+\fi
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, backgrounds, calc}
+
+\definecolor{azul}{HTML}{1F5A96}
+\definecolor{morado}{HTML}{6A1B9A}
+\definecolor{naranja}{HTML}{E07B00}
+\definecolor{gris}{HTML}{455A64}
+
+\begin{document}
+\begin{tikzpicture}[
+  >=Stealth,
+  node distance=4.5mm,
+  proc/.style={rectangle, rounded corners=3pt, draw=morado, line width=0.9pt,
+               fill=morado!8, text width=7cm, align=flush center,
+               minimum height=8mm, font=\small},
+  datos/.style={trapezium, trapezium left angle=75, trapezium right angle=105,
+                trapezium stretches=true, draw=azul, line width=0.9pt,
+                fill=azul!10, text width=5.6cm, align=flush center,
+                minimum height=9mm, font=\small},
+  dec/.style={diamond, aspect=2.6, draw=naranja, line width=0.9pt,
+              fill=naranja!15, text width=2.9cm, align=flush center,
+              inner sep=0pt, font=\small},
+  term/.style={rectangle, rounded corners=4mm, draw=gris, line width=0.9pt,
+               fill=gris!12, minimum width=2.8cm, minimum height=8mm,
+               align=flush center, font=\small\bfseries},
+  flecha/.style={->, line width=0.9pt, draw=gris},
+  etq/.style={font=\footnotesize\bfseries, text=gris}
+]
+
+% ---------- columna 1: análisis por pares ----------
+\node[term] (ini) {Inicio};
+\node[datos, below=of ini] (in) {Imágenes corregidas\\ (salida del proceso 1)\\
+  \footnotesize caso de prueba: 12 imágenes\\ \footnotesize $\rightarrow$ 66 pares posibles};
+\node[dec, below=of in] (par) {¿Queda otro\\ par $(i,j)$?};
+
+\node[proc, below=11mm of par] (bb) {Intersección geográfica de las dos imágenes};
+\node[dec, below=of bb] (tras) {¿Hay\\ traslape?};
+\node[proc, below=6mm of tras] (rep) {Reproyectar $j$ sobre la grilla de $i$ (bilineal)};
+\node[proc, below=of rep] (val) {Máscara de píxeles válidos (sin \textit{nodata} y $>0$)};
+\node[proc, below=of val] (est) {Media y desviación estándar locales\\ (ventana de $9\times9$ píxeles)};
+\node[proc, below=of est] (cand) {\textbf{Candidatos de ajuste}\\
+  quita el agua (reflexión especular):\\ media local $\leq$ percentil 15\\[2pt]
+  quita la ciudad (doble rebote):\\ desviación local $\geq$ percentil 85};
+\node[dec, below=of cand] (n) {¿Hay $\geq 500$\\ candidatos?};
+\node[proc, below=6mm of n] (ratio) {Razón de brillo del par\\
+  $r_{ij} = \ln\left(\operatorname{mediana}(\sigma^0_j) \,/\, \operatorname{mediana}(\sigma^0_i)\right)$};
+
+\begin{scope}[on background layer]
+  \node[draw=morado, dashed, line width=0.9pt, rounded corners=6pt,
+        fill=morado!3, fit=(bb)(ratio), inner xsep=9mm, inner ysep=4mm] (caja) {};
+\end{scope}
+\node[font=\small\bfseries, text=morado, rotate=90, anchor=north]
+  at (caja.east) {Para cada par de imágenes $(i,j)$};
+
+\coordinate (L) at ($(caja.west)+(-6mm,0)$);
+
+% ---------- columna 2: ajuste global ----------
+\node[proc, right=24mm of bb] (sis) {\textbf{Sistema global con todos los pares}\\
+  $\ln h_i - \ln h_j = r_{ij}$\\
+  \footnotesize caso de prueba: 19 pares utilizables};
+\node[proc, below=of sis] (ridge) {Mínimos cuadrados con regularización ridge\\
+  $(A^{\mathsf T}A + \lambda I)\,\ln h = A^{\mathsf T} r$, \quad $\lambda = 10^{-3}$};
+\node[proc, below=of ridge] (ancla) {Referencia: promedio de $\ln h_i = 0$};
+\node[datos, below=of ancla] (h) {Ganancia $h_i$ para cada imagen};
+\node[proc, below=of h] (met) {Métricas antes y después en los traslapes:\\
+  $D_\mu$ (media), $D_\delta$ (desviación) y RMSE};
+\node[proc, below=of met] (apl) {Aplicar $\sigma^0_i \cdot h_i$ a cada imagen};
+\node[datos, below=of apl] (out) {Exportar \texttt{*\_RN.tif} (float32)\\ y el reporte \texttt{rprn\_report.json}};
+\node[term, below=of out] (fin) {Fin $\rightarrow$ mosaico en SNAP};
+
+% ---------- flechas ----------
+\draw[flecha] (ini) -- (in);
+\draw[flecha] (in) -- (par);
+\draw[flecha] (par) -- node[etq, right]{Sí} (bb);
+\draw[flecha] (bb) -- (tras);
+\draw[flecha] (tras) -- node[etq, right]{Sí} (rep);
+\draw[flecha] (rep) -- (val);
+\draw[flecha] (val) -- (est);
+\draw[flecha] (est) -- (cand);
+\draw[flecha] (cand) -- (n);
+\draw[flecha] (n) -- node[etq, right]{Sí} (ratio);
+
+% retornos al siguiente par
+\draw[flecha] (ratio.west) -| (L |- par.west) -- (par.west);
+\draw[line width=0.9pt, draw=gris] (tras.west) -- node[etq, above, pos=0.55]{No} (L |- tras.west);
+\fill[gris] (L |- tras.west) circle (1.6pt);
+\draw[line width=0.9pt, draw=gris] (n.west) -- node[etq, above, pos=0.55]{No} (L |- n.west);
+\fill[gris] (L |- n.west) circle (1.6pt);
+
+% paso al ajuste global
+\draw[flecha] (par.east) -- node[etq, above, pos=0.3]{No} (par.east -| sis.north) -- (sis.north);
+\draw[flecha] (sis) -- (ridge);
+\draw[flecha] (ridge) -- (ancla);
+\draw[flecha] (ancla) -- (h);
+\draw[flecha] (h) -- (met);
+\draw[flecha] (met) -- (apl);
+\draw[flecha] (apl) -- (out);
+\draw[flecha] (out) -- (fin);
+
+\end{tikzpicture}
+\end{document}
