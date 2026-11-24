@@ -1,5 +1,6 @@
-% Diagrama 2: proceso 1 (proceso1mosaico_2.ipynb)
-% Preprocesamiento por lotes con esa_snappy.
+% Diagrama 2: proceso 1 (proceso1mosaico.ipynb)
+% Preprocesamiento por lotes con esa_snappy, banda renombrada a Sigma0,
+% registro de tiempos, tamaños y equipo. Cifras de la última corrida (octubre de 2026).
 % Compila en Overleaf con pdfLaTeX o XeLaTeX.
 \documentclass[border=12pt]{standalone}
 \usepackage{iftex}
@@ -28,6 +29,9 @@
   proc/.style={rectangle, rounded corners=3pt, draw=verde, line width=0.9pt,
                fill=verde!10, text width=6.6cm, align=flush center,
                minimum height=8mm, font=\small},
+  info/.style={rectangle, rounded corners=3pt, draw=gris, line width=0.9pt,
+               fill=gris!8, text width=6.6cm, align=flush center,
+               minimum height=8mm, font=\small},
   datos/.style={trapezium, trapezium left angle=75, trapezium right angle=105,
                 trapezium stretches=true, draw=azul, line width=0.9pt,
                 fill=azul!10, text width=5.6cm, align=flush center,
@@ -44,9 +48,12 @@
 
 % ---------- flujo principal ----------
 \node[term] (ini) {Inicio};
-\node[datos, below=of ini] (in) {Carpeta \texttt{1\_IMAGENES}\\ archivos \texttt{.zip} de Sentinel-1 (SLC)};
+\node[info, below=of ini] (eq) {Registrar la hora de inicio y el equipo:\\
+  procesador, núcleos, RAM, disco libre\\ y memoria de Java (SNAP)};
+\node[datos, below=of eq] (in) {Carpeta \texttt{1\_IMAGENES}: archivos\\ \texttt{.zip} de Sentinel-1 (SLC)\\
+  \footnotesize esta corrida: 9 archivos (27 franjas)};
 \node[dec, below=of in] (hay) {¿Queda otro\\ \texttt{.zip}?};
-\node[proc, below=6mm of hay] (leer) {Leer el producto (\texttt{ProductIO.readProduct})};
+\node[proc, below=6mm of hay] (leer) {Leer el producto (\texttt{ProductIO.readProduct})\\ e iniciar el cronómetro del archivo};
 \node[dec, below=of leer] (ok) {¿Se pudo\\ abrir?};
 \node[proc, below=6mm of ok] (nom) {Tomar del nombre del archivo: plataforma,\\ fecha, órbita, datatake e identificador};
 
@@ -60,12 +67,18 @@
 \node[proc, below=of s5] (s6) {\textbf{6.} Conversión lineal $\rightarrow$ dB};
 \node[proc, below=of s6] (s7) {\textbf{7.} Conversión a 8 bits (\texttt{uint8})};
 \node[datos, below=of s7] (s8) {\textbf{8.} Escribir en BEAM-DIMAP\\ (\texttt{.dim} + carpeta \texttt{.data})};
-\node[proc, below=of s8] (s9) {\textbf{9.} Renombrar la banda a \texttt{Sigma0}};
-\node[dec, below=of s9] (mas) {¿Quedan\\ franjas?};
+\node[proc, below=of s8] (s9) {\textbf{9.} Renombrar la banda a \texttt{Sigma0}\\ (en el \texttt{.dim}, el \texttt{.hdr} y la \texttt{.img})};
+\node[info, below=of s9] (reg) {Registrar el tiempo de la franja,\\ los MB en disco y el tamaño en píxeles};
+\node[dec, below=of reg] (mas) {¿Quedan\\ franjas?};
 
-\node[proc, below=9mm of mas] (disp) {Liberar memoria (\texttt{prod.dispose})};
+\node[proc, below=9mm of mas] (disp) {Liberar memoria (\texttt{prod.dispose})\\ y registrar el tiempo del archivo};
 
-\node[term, right=22mm of hay] (fin) {Fin\\[-1pt]\footnotesize\mdseries ortoimágenes en \texttt{2\_PROCES}};
+% ---------- cierre (columna derecha) ----------
+\node[info, right=20mm of hay] (res) {\textbf{Resumen de ejecución}\\
+  tiempo total, por archivo y por franja\\ archivos omitidos y MB en disco\\ equipo y memoria máxima usada};
+\node[datos, below=of res] (json) {\texttt{resumen\_proceso1.json}\\ en \texttt{2\_PROCES}};
+\node[term, below=of json] (fin) {Fin\\[-1pt]\footnotesize\mdseries ortoimágenes \texttt{.dim} con banda \texttt{Sigma0}\\
+  \footnotesize\mdseries $\rightarrow$ entrada del proceso 2};
 
 % caja del ciclo
 \begin{scope}[on background layer]
@@ -80,14 +93,17 @@
 \coordinate (M) at ($(caja.west)+(4mm,0)$);
 
 % ---------- flechas ----------
-\draw[flecha] (ini) -- (in);
+\draw[flecha] (ini) -- (eq);
+\draw[flecha] (eq) -- (in);
 \draw[flecha] (in) -- (hay);
 \draw[flecha] (hay) -- node[etq, right]{Sí} (leer);
-\draw[flecha] (hay.east) -- node[etq, above]{No} (fin.west);
+\draw[flecha] (hay.east) -- node[etq, above]{No} (res.west);
+\draw[flecha] (res) -- (json);
+\draw[flecha] (json) -- (fin);
 \draw[flecha] (leer) -- (ok);
 \draw[flecha] (ok) -- node[etq, right]{Sí} (nom);
 \draw[flecha] (nom) -- (s1);
-\foreach \a/\b in {s1/s2, s2/s3, s3/s4, s4/s5, s5/s6, s6/s7, s7/s8, s8/s9, s9/mas}
+\foreach \a/\b in {s1/s2, s2/s3, s3/s4, s4/s5, s5/s6, s6/s7, s7/s8, s8/s9, s9/reg, reg/mas}
   \draw[flecha] (\a) -- (\b);
 \draw[flecha] (mas) -- node[etq, right, pos=0.8]{No} (disp);
 
@@ -96,7 +112,7 @@
 
 % retorno al siguiente .zip
 \draw[flecha] (disp.west) -| (L |- hay.west) -- (hay.west);
-\draw[line width=0.9pt, draw=gris] (ok.west) -- node[etq, above]{No: se omite} (L |- ok.west);
+\draw[line width=0.9pt, draw=gris] (ok.west) -- node[etq, above, align=center]{No: se omite\\ y se anota} (L |- ok.west);
 \fill[gris] (L |- ok.west) circle (1.6pt);
 
 \end{tikzpicture}

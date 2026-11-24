@@ -1,5 +1,5 @@
 % Versión para diapositiva (plantilla Semana ICG 2026): tamaño real 1:1, texto de 24 pt.
-% Proceso 2 (proceso2mosaico.ipynb). Insertar en PowerPoint al 100 %.
+% Proceso 2 (proceso2mosaico.ipynb), entrada: salidas .dim del proceso 1. Insertar al 100 %.
 \documentclass[border=2pt]{standalone}
 \usepackage{iftex}
 \ifPDFTeX
@@ -38,13 +38,13 @@
 % fila 2: global
 \node[paso=verde, below=30mm of p1] (p4) {\textbf{4. Ajuste global}\\ mínimos cuadrados ridge};
 \node[paso=verde, right=12mm of p4] (p5) {\textbf{5. Ganancia $h_i$}\\ un factor por imagen};
-\node[paso=verde, right=12mm of p5] (p6) {\textbf{6. Corrección}\\ $\sigma^0 \cdot h_i$ $\rightarrow$ \_RN.tif};
+\node[paso=verde, right=12mm of p5] (p6) {\textbf{6. Exportar}\\ $\sigma^0 \cdot h_i$ $\rightarrow$ \_RN.tif};
 
 \begin{scope}[on background layer]
   \node[grupo=azul,  fit=(p1)(p3)] (g1) {};
   \node[grupo=verde, fit=(p4)(p6)] (g2) {};
 \end{scope}
-\node[etq=azul]  at ([xshift=2mm, yshift=3mm]g1.north west) {Para cada par de imágenes};
+\node[etq=azul]  at ([xshift=2mm, yshift=3mm]g1.north west) {Para cada par de imágenes del proceso 1 (banda Sigma0)};
 \node[etq=verde, anchor=south east] at ([xshift=-2mm, yshift=3mm]g2.north east) {Con todos los pares a la vez};
 
 \foreach \a/\b in {p1/p2, p2/p3, p4/p5, p5/p6}
