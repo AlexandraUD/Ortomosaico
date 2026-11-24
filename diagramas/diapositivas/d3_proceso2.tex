@@ -38,7 +38,7 @@
 % fila 2: global
 \node[paso=verde, below=30mm of p1] (p4) {\textbf{4. Ajuste global}\\ mínimos cuadrados ridge};
 \node[paso=verde, right=12mm of p4] (p5) {\textbf{5. Ganancia $h_i$}\\ un factor por imagen};
-\node[paso=verde, right=12mm of p5] (p6) {\textbf{6. Exportar}\\ $\sigma^0 \cdot h_i$ $\rightarrow$ \_RN.tif};
+\node[paso=verde, right=12mm of p5] (p6) {\textbf{6. Exportar \_RN.tif}\\ $\sigma^0 \cdot h_i$, nodata 0};
 
 \begin{scope}[on background layer]
   \node[grupo=azul,  fit=(p1)(p3)] (g1) {};

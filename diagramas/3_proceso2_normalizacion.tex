@@ -1,7 +1,7 @@
 % Diagrama 3: proceso 2 (proceso2mosaico.ipynb)
 % Normalización radiométrica adaptada del método RPRN (Liu et al., 2022),
 % a partir de las salidas .dim (banda Sigma0) del proceso 1.
-% Cifras de la última corrida (octubre de 2026).
+% Cifras de la corrida del 24 de noviembre de 2026.
 % Compila en Overleaf con pdfLaTeX o XeLaTeX.
 \documentclass[border=12pt]{standalone}
 \usepackage{iftex}
@@ -95,12 +95,13 @@
 \node[proc, below=of h] (met) {Métricas antes y después en los traslapes:\\
   $D_\mu$ (media), $D_\delta$ (desviación) y RMSE\\
   \footnotesize esta corrida: $D_\mu$ $-$65,4~\%, RMSE $-$63,6~\%, $D_\delta$ +25,5~\%};
-\node[proc, below=of met] (apl) {Aplicar $\sigma^0_i \cdot h_i$ a cada imagen\\ (por bloques de filas)};
-\node[datos, below=of apl] (out) {\texttt{*\_RN.tif} en \texttt{3\_CALIB}\\ (GeoTIFF float32 comprimido)};
+\node[proc, below=of met] (apl) {Aplicar $\sigma^0_i \cdot h_i$ a cada imagen\\ (por bloques de filas; el \textit{nodata} queda en 0)};
+\node[datos, below=of apl] (out) {\texttt{*\_RN.tif} en \texttt{3\_CALIB}\\ (GeoTIFF float32, banda \texttt{Sigma0})\\
+  \footnotesize \textit{nodata} = 0 marcado también para SNAP};
 \node[datos, below=of out] (rep2) {\texttt{rprn\_report.json}: ganancias,\\ métricas, pares, tiempos y equipo};
 \node[info, below=of rep2] (res) {\textbf{Resumen de ejecución}\\
   tiempos por etapa, equipo y memoria máxima\\
-  \footnotesize esta corrida: 6 min 23 s, 2,3 GB de RAM};
+  \footnotesize esta corrida: 6 min 23 s, 2,4 GB de RAM};
 \node[term, below=of res] (fin) {Fin $\rightarrow$ mosaico en SNAP};
 
 % ---------- flechas ----------
